@@ -1,14 +1,9 @@
 workspace "gumlang"
 	configurations {"debug", "release"}
-
-project "gum"
-	kind "ConsoleApp"
 	language "C"
 	cdialect "C99"
-
-	files "src/**.c"
+	includedirs "src/include/"
 	objdir "bin/%{cfg.buildcfg}/obj"
-	targetdir "bin/%{cfg.buildcfg}"
 
 	filter "debug"
 		symbols "On"
@@ -16,3 +11,12 @@ project "gum"
 	filter "release"
 		optimize "Speed"
 		flags "LinkTimeOptimization"
+
+project "libgum"
+	kind "SharedLib"
+	files "src/lib/**.c"
+
+project "gum"
+	kind "ConsoleApp"
+	files "src/cli/**.c"
+	links "libgum"

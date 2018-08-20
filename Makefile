@@ -9,25 +9,34 @@ ifndef verbose
 endif
 
 ifeq ($(config),debug)
+  libgum_config = debug
   gum_config = debug
 endif
 ifeq ($(config),release)
+  libgum_config = release
   gum_config = release
 endif
 
-PROJECTS := gum
+PROJECTS := libgum gum
 
 .PHONY: all clean help $(PROJECTS) 
 
 all: $(PROJECTS)
 
-gum:
+libgum:
+ifneq (,$(libgum_config))
+	@echo "==== Building libgum ($(libgum_config)) ===="
+	@${MAKE} --no-print-directory -C . -f libgum.make config=$(libgum_config)
+endif
+
+gum: libgum
 ifneq (,$(gum_config))
 	@echo "==== Building gum ($(gum_config)) ===="
 	@${MAKE} --no-print-directory -C . -f gum.make config=$(gum_config)
 endif
 
 clean:
+	@${MAKE} --no-print-directory -C . -f libgum.make clean
 	@${MAKE} --no-print-directory -C . -f gum.make clean
 
 help:
@@ -40,6 +49,7 @@ help:
 	@echo "TARGETS:"
 	@echo "   all (default)"
 	@echo "   clean"
+	@echo "   libgum"
 	@echo "   gum"
 	@echo ""
 	@echo "For more information, see http://industriousone.com/premake/quick-start"

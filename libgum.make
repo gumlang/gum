@@ -13,8 +13,8 @@ endif
 ifeq ($(config),debug)
   RESCOMP = windres
   TARGETDIR = bin/debug
-  TARGET = $(TARGETDIR)/gum.exe
-  OBJDIR = bin/debug/obj/debug/gum
+  TARGET = $(TARGETDIR)/libgum.dll
+  OBJDIR = bin/debug/obj/debug/libgum
   DEFINES +=
   INCLUDES += -Isrc/include
   FORCE_INCLUDE +=
@@ -22,9 +22,9 @@ ifeq ($(config),debug)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -std=c99
   ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-  LIBS += bin/debug/libgum.lib
-  LDDEPS += bin/debug/libgum.lib
-  ALL_LDFLAGS += $(LDFLAGS)
+  LIBS +=
+  LDDEPS +=
+  ALL_LDFLAGS += $(LDFLAGS) -shared -Wl,--out-implib="bin/debug/libgum.lib"
   LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -40,8 +40,8 @@ endif
 ifeq ($(config),release)
   RESCOMP = windres
   TARGETDIR = bin/release
-  TARGET = $(TARGETDIR)/gum.exe
-  OBJDIR = bin/release/obj/release/gum
+  TARGET = $(TARGETDIR)/libgum.dll
+  OBJDIR = bin/release/obj/release/libgum
   DEFINES +=
   INCLUDES += -Isrc/include
   FORCE_INCLUDE +=
@@ -49,9 +49,9 @@ ifeq ($(config),release)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -flto -O3 -std=c99
   ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -flto -O3
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-  LIBS += bin/release/libgum.lib
-  LDDEPS += bin/release/libgum.lib
-  ALL_LDFLAGS += $(LDFLAGS) -flto -s
+  LIBS +=
+  LDDEPS +=
+  ALL_LDFLAGS += $(LDFLAGS) -flto -shared -Wl,--out-implib="bin/release/libgum.lib" -s
   LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -65,7 +65,7 @@ all: prebuild prelink $(TARGET)
 endif
 
 OBJECTS := \
-	$(OBJDIR)/main.o \
+	$(OBJDIR)/hello.o \
 
 RESOURCES := \
 
@@ -80,7 +80,7 @@ ifeq (/bin,$(findstring /bin,$(SHELL)))
 endif
 
 $(TARGET): $(GCH) ${CUSTOMFILES} $(OBJECTS) $(LDDEPS) $(RESOURCES)
-	@echo Linking gum
+	@echo Linking libgum
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) mkdir -p $(TARGETDIR)
 else
@@ -90,7 +90,7 @@ endif
 	$(POSTBUILDCMDS)
 
 clean:
-	@echo Cleaning gum
+	@echo Cleaning libgum
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
 	$(SILENT) rm -rf $(OBJDIR)
@@ -117,7 +117,7 @@ endif
 	$(SILENT) $(CC) -x c-header $(ALL_CFLAGS) -o "$@" -MF "$(@:%.gch=%.d)" -c "$<"
 endif
 
-$(OBJDIR)/main.o: src/cli/main.c
+$(OBJDIR)/hello.o: src/lib/hello.c
 	@echo $(notdir $<)
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) mkdir -p $(OBJDIR)
