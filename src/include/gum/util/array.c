@@ -55,9 +55,11 @@ void* gum_array_add(gum_array_t* array, gum_int_t index) {
 	if (index == -1) {
 		index = array->size;
 	}
+	size_t size = (array->size - index) * array->elem_size;
 	gum_array_resize(array, array->size + 1);
 
-	gum_int_t size = 
-	memmove(ARRAY_GET(array, index), ARRAY_GET(array, index + 1), 1);
+	if (size > 0) {
+		memmove(ARRAY_GET(array, index), ARRAY_GET(array, index + 1), size);
+	}
 	return ARRAY_GET(array, index);
 }
