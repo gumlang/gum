@@ -3,7 +3,7 @@ workspace "gumlang"
 	language "C"
 	cdialect "C99"
 	includedirs "src/include/"
-	objdir "bin/%{cfg.buildcfg}/obj"
+	objdir "bin/obj"
 
 	filter "debug"
 		symbols "On"

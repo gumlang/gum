@@ -14,7 +14,7 @@ ifeq ($(config),debug)
   RESCOMP = windres
   TARGETDIR = bin/debug
   TARGET = $(TARGETDIR)/libgum.dll
-  OBJDIR = bin/debug/obj/debug/libgum
+  OBJDIR = bin/obj/debug/libgum
   DEFINES +=
   INCLUDES += -Isrc/include
   FORCE_INCLUDE +=
@@ -41,7 +41,7 @@ ifeq ($(config),release)
   RESCOMP = windres
   TARGETDIR = bin/release
   TARGET = $(TARGETDIR)/libgum.dll
-  OBJDIR = bin/release/obj/release/libgum
+  OBJDIR = bin/obj/release/libgum
   DEFINES +=
   INCLUDES += -Isrc/include
   FORCE_INCLUDE +=
