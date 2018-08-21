@@ -19,8 +19,8 @@ ifeq ($(config),debug)
   INCLUDES += -Isrc/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
-  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -std=c99
-  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g
+  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -Wall -Wextra -std=c99
+  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -Wall -Wextra
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += bin/debug/libgrt.lib
   LDDEPS += bin/debug/libgrt.lib
@@ -46,8 +46,8 @@ ifeq ($(config),release)
   INCLUDES += -Isrc/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
-  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O3 -std=c99
-  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O3
+  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O3 -Wall -Wextra -std=c99
+  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O3 -Wall -Wextra
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += bin/release/libgrt.lib
   LDDEPS += bin/release/libgrt.lib

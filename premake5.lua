@@ -4,7 +4,7 @@ workspace "gumlang"
 	cdialect "C99"
 	includedirs "src/include/"
 	objdir "bin/obj"
-	-- flags "StaticRuntime"
+	warnings "Extra"
 
 	filter "debug"
 		symbols "On"

@@ -1,5 +1,7 @@
 #ifndef GUM_H_
 #define GUM_H_
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -24,6 +26,10 @@
 #else
 #	define GUM_API GUM_IMPORT
 #endif
+
+typedef _Bool gum_bool_t;
+typedef int32_t gum_int_t;
+typedef float gum_float_t;
 
 typedef struct gum_t gum_t;
 

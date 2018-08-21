@@ -19,8 +19,8 @@ ifeq ($(config),debug)
   INCLUDES += -Isrc/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
-  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -std=c99
-  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g
+  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -Wall -Wextra -std=c99
+  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -Wall -Wextra
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS +=
   LDDEPS +=
@@ -46,8 +46,8 @@ ifeq ($(config),release)
   INCLUDES += -Isrc/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
-  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O3 -std=c99
-  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O3
+  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O3 -Wall -Wextra -std=c99
+  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O3 -Wall -Wextra
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS +=
   LDDEPS +=
@@ -66,6 +66,7 @@ endif
 
 OBJECTS := \
 	$(OBJDIR)/array.o \
+	$(OBJDIR)/string.o \
 
 RESOURCES := \
 
@@ -118,6 +119,14 @@ endif
 endif
 
 $(OBJDIR)/array.o: src/lib/util/array.c
+	@echo $(notdir $<)
+ifeq (posix,$(SHELLTYPE))
+	$(SILENT) mkdir -p $(OBJDIR)
+else
+	$(SILENT) mkdir $(subst /,\\,$(OBJDIR))
+endif
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/string.o: src/lib/util/string.c
 	@echo $(notdir $<)
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) mkdir -p $(OBJDIR)
