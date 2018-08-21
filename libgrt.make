@@ -66,6 +66,7 @@ endif
 
 OBJECTS := \
 	$(OBJDIR)/array.o \
+	$(OBJDIR)/map.o \
 	$(OBJDIR)/string.o \
 
 RESOURCES := \
@@ -119,6 +120,14 @@ endif
 endif
 
 $(OBJDIR)/array.o: src/lib/util/array.c
+	@echo $(notdir $<)
+ifeq (posix,$(SHELLTYPE))
+	$(SILENT) mkdir -p $(OBJDIR)
+else
+	$(SILENT) mkdir $(subst /,\\,$(OBJDIR))
+endif
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/map.o: src/lib/util/map.c
 	@echo $(notdir $<)
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) mkdir -p $(OBJDIR)
