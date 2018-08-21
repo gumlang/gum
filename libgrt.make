@@ -13,9 +13,9 @@ endif
 ifeq ($(config),debug)
   RESCOMP = windres
   TARGETDIR = bin/debug
-  TARGET = $(TARGETDIR)/libgum.dll
-  OBJDIR = bin/obj/debug/libgum
-  DEFINES +=
+  TARGET = $(TARGETDIR)/libgrt.dll
+  OBJDIR = bin/obj/debug/libgrt
+  DEFINES += -DGUM_BUILD
   INCLUDES += -Isrc/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
@@ -24,7 +24,7 @@ ifeq ($(config),debug)
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS +=
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -shared -Wl,--out-implib="bin/debug/libgum.lib"
+  ALL_LDFLAGS += $(LDFLAGS) -shared -Wl,--out-implib="bin/debug/libgrt.lib"
   LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -40,18 +40,18 @@ endif
 ifeq ($(config),release)
   RESCOMP = windres
   TARGETDIR = bin/release
-  TARGET = $(TARGETDIR)/libgum.dll
-  OBJDIR = bin/obj/release/libgum
-  DEFINES +=
+  TARGET = $(TARGETDIR)/libgrt.dll
+  OBJDIR = bin/obj/release/libgrt
+  DEFINES += -DGUM_BUILD
   INCLUDES += -Isrc/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
-  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -flto -O3 -std=c99
-  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -flto -O3
+  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O3 -std=c99
+  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O3
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS +=
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -flto -shared -Wl,--out-implib="bin/release/libgum.lib" -s
+  ALL_LDFLAGS += $(LDFLAGS) -shared -Wl,--out-implib="bin/release/libgrt.lib" -s
   LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -65,7 +65,7 @@ all: prebuild prelink $(TARGET)
 endif
 
 OBJECTS := \
-	$(OBJDIR)/hello.o \
+	$(OBJDIR)/array.o \
 
 RESOURCES := \
 
@@ -80,7 +80,7 @@ ifeq (/bin,$(findstring /bin,$(SHELL)))
 endif
 
 $(TARGET): $(GCH) ${CUSTOMFILES} $(OBJECTS) $(LDDEPS) $(RESOURCES)
-	@echo Linking libgum
+	@echo Linking libgrt
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) mkdir -p $(TARGETDIR)
 else
@@ -90,7 +90,7 @@ endif
 	$(POSTBUILDCMDS)
 
 clean:
-	@echo Cleaning libgum
+	@echo Cleaning libgrt
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
 	$(SILENT) rm -rf $(OBJDIR)
@@ -117,7 +117,7 @@ endif
 	$(SILENT) $(CC) -x c-header $(ALL_CFLAGS) -o "$@" -MF "$(@:%.gch=%.d)" -c "$<"
 endif
 
-$(OBJDIR)/hello.o: src/lib/hello.c
+$(OBJDIR)/array.o: src/lib/util/array.c
 	@echo $(notdir $<)
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) mkdir -p $(OBJDIR)

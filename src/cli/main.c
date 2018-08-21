@@ -1,5 +1,4 @@
-#include "hello.h"
+#include <gum/array.h>
 
 int main(int argc, char* argv[]) {
-	hello_world();
 }

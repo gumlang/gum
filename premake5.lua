@@ -4,19 +4,20 @@ workspace "gumlang"
 	cdialect "C99"
 	includedirs "src/include/"
 	objdir "bin/obj"
+	-- flags "StaticRuntime"
 
 	filter "debug"
 		symbols "On"
 	
 	filter "release"
 		optimize "Speed"
-		flags "LinkTimeOptimization"
 
-project "libgum"
+project "libgrt"
 	kind "SharedLib"
 	files "src/lib/**.c"
+	defines "GUM_BUILD"
 
 project "gum"
 	kind "ConsoleApp"
 	files "src/cli/**.c"
-	links "libgum"
+	links "libgrt"
