@@ -1,33 +1,24 @@
 #ifndef GUM_H_
 #define GUM_H_
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
-#ifdef __cplusplus
-#	define GUM_EXTERN extern "C"
-#else
-#	define GUM_EXTERN extern
-#endif
-
 #ifdef _WIN32
-#	define GUM__EXPORT __declspec(dllexport)
-#	define GUM__IMPORT __declspec(dllimport)
+#	define GUM_EXPORT __declspec(dllexport)
+#	define GUM_IMPORT __declspec(dllimport)
 #else
-#	define GUM__EXPORT
-#	define GUM__IMPORT
+#	define GUM_EXPORT
+#	define GUM_IMPORT
 #endif
-
-#define GUM_EXPORT GUM_EXTERN GUM__EXPORT
-#define GUM_IMPORT GUM_EXTERN GUM__IMPORT
 
 #ifdef GUM_BUILD
 #	define GUM_API GUM_EXPORT
+#elif defined(__cplusplus)
+#	define GUM_API extern "C" GUM_IMPORT
 #else
 #	define GUM_API GUM_IMPORT
 #endif
 
-typedef _Bool gum_bool_t;
 typedef int32_t gum_int_t;
 typedef float gum_float_t;
 

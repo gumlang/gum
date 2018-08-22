@@ -20,7 +20,7 @@ static void* array_resize(gum_array_t* array, gum_int_t index, gum_int_t size, g
 		while (array->capacity < capacity) {
 			array->capacity *= 2;
 		}
-		array->data = realloc(array->data, array->capacity);
+		array->data = realloc(array->data, array->capacity * array->value_size);
 	}
 
 	gum_int_t move = array->size - index - size;
