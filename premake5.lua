@@ -1,23 +1,27 @@
+function gum_project(name, type, src)
+	src = src or name
+	project(name)
+		kind(type)
+		files("src/" .. src .. "/**.c")
+end
+
 workspace "gumlang"
-	configurations {"debug", "release"}
+	configurations {"release", "debug"}
 	language "C"
 	cdialect "C99"
 	includedirs "src/include/"
 	objdir "bin/obj"
 	warnings "Extra"
-
-	filter "debug"
-		symbols "On"
 	
 	filter "release"
 		optimize "Speed"
 
-project "libgrt"
-	kind "SharedLib"
-	files "src/lib/**.c"
+	filter "debug"
+		symbols "On"
+		defines "GUM_DEBUG"
+
+gum_project("libgrt", "SharedLib")
 	defines "GUM_BUILD"
 
-project "gum"
-	kind "ConsoleApp"
-	files "src/cli/**.c"
+gum_project("gob", "ConsoleApp")
 	links "libgrt"
