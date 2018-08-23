@@ -66,6 +66,9 @@ void gum_input_error(gum_char_t pos, const char* format, ...) {
 	g_peeked = 0;
 	gum_char_t c;
 	while ((c = gum_input_next()).c != '\n' && c.c != -1) {
+		if (c.c == '\t') {
+			c.c = ' ';
+		}
 		fputc(c.c, stderr);
 	}
 	fputc('\n', stderr);

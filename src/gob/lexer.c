@@ -75,6 +75,24 @@ static _Bool lexer_next_char() {
 	return 1;
 }
 
+static void lexer_next_name() {
+	gum_char_t c = gum_input_peek();
+	g_token.pos = c;
+	g_token.type = GUM_TOKEN_NAME;
+	gum_string_create(&g_token.data.s);
+
+	do {
+		char value = gum_input_next().c;
+		gum_string_add(&g_token.data.s, -1, 1, &value);
+	} while (isalnum((c = gum_input_peek()).c) || c.c == '_');
+
+	unsigned short* kw = gum_map_get(&g_keywords, g_token.data.s.size, g_token.data.s.data);
+	if (kw != NULL) {
+		g_token.type = *kw;
+		gum_string_destroy(&g_token.data.s);
+	}
+}
+
 gum_token_t gum_lexer_peek() {
 	if (!g_peeked) {
 		for (;;) {
@@ -84,12 +102,16 @@ gum_token_t gum_lexer_peek() {
 			}
 
 			if (c.c == -1) {
+				g_token.pos = c;
 				g_token.type = GUM_TOKEN_EOF;
 				break;
 			} else if (strchr("(){}<>[].,=+-*/%~|&^!#?", c.c) != NULL) {
 				if (lexer_next_char()) {
 					break;
 				}
+			} else if (isalpha(c.c) || c.c == '_') {
+				lexer_next_name();
+				break;
 			} else {
 				gum_input_error(c, "Unknown character '%c'", c.c);
 			}

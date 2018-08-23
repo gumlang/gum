@@ -16,6 +16,12 @@ int main() {
 	gum_lexer_init("src/Main.gum");
 	gum_token_t token;
 	while ((token = gum_lexer_next()).type != GUM_TOKEN_EOF) {
-		printf("%i\n", token.type);
+		printf("%04X\n", token.type);
+		if (token.type == GUM_TOKEN_NAME || token.type == GUM_TOKEN_STRING) {
+			putchar('\t');
+			fwrite(token.data.s.data, token.data.s.size, 1, stdout);
+			putchar('\n');
+			gum_string_destroy(&token.data.s);
+		}
 	}
 }
