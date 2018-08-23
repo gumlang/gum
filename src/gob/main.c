@@ -1,9 +1,9 @@
-#include "input.h"
+#include "lexer.h"
 #include <stdlib.h>
 
 #ifdef GUM_DEBUG
 	static void freeze() {
-		puts("Press enter to continue");
+		puts("\nPress enter to continue");
 		getchar();
 	}
 #endif
@@ -13,13 +13,9 @@ int main() {
 		atexit(freeze);
 	#endif
 
-	gum_input_init("src/Main.gum");
-
-	gum_char_t c;
-	do {
-		c = gum_input_next();
-		if (c.c == '!') {
-			gum_input_error(c, "This is an error");
-		}
-	} while (c.c != -1);
+	gum_lexer_init("src/Main.gum");
+	gum_token_t token;
+	while ((token = gum_lexer_next()).type != GUM_TOKEN_EOF) {
+		printf("%i\n", token.type);
+	}
 }

@@ -20,8 +20,8 @@ workspace "gumlang"
 		symbols "On"
 		defines "GUM_DEBUG"
 
-gum_project("libgrt", "SharedLib")
+gum_project("libgum", "SharedLib")
 	defines "GUM_BUILD"
 
 gum_project("gob", "ConsoleApp")
-	links "libgrt"
+	links "libgum"

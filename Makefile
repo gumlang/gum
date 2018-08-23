@@ -9,34 +9,34 @@ ifndef verbose
 endif
 
 ifeq ($(config),release)
-  libgrt_config = release
+  libgum_config = release
   gob_config = release
 endif
 ifeq ($(config),debug)
-  libgrt_config = debug
+  libgum_config = debug
   gob_config = debug
 endif
 
-PROJECTS := libgrt gob
+PROJECTS := libgum gob
 
 .PHONY: all clean help $(PROJECTS) 
 
 all: $(PROJECTS)
 
-libgrt:
-ifneq (,$(libgrt_config))
-	@echo "==== Building libgrt ($(libgrt_config)) ===="
-	@${MAKE} --no-print-directory -C . -f libgrt.make config=$(libgrt_config)
+libgum:
+ifneq (,$(libgum_config))
+	@echo "==== Building libgum ($(libgum_config)) ===="
+	@${MAKE} --no-print-directory -C . -f libgum.make config=$(libgum_config)
 endif
 
-gob: libgrt
+gob: libgum
 ifneq (,$(gob_config))
 	@echo "==== Building gob ($(gob_config)) ===="
 	@${MAKE} --no-print-directory -C . -f gob.make config=$(gob_config)
 endif
 
 clean:
-	@${MAKE} --no-print-directory -C . -f libgrt.make clean
+	@${MAKE} --no-print-directory -C . -f libgum.make clean
 	@${MAKE} --no-print-directory -C . -f gob.make clean
 
 help:
@@ -49,7 +49,7 @@ help:
 	@echo "TARGETS:"
 	@echo "   all (default)"
 	@echo "   clean"
-	@echo "   libgrt"
+	@echo "   libgum"
 	@echo "   gob"
 	@echo ""
 	@echo "For more information, see http://industriousone.com/premake/quick-start"

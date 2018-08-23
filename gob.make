@@ -22,8 +22,8 @@ ifeq ($(config),release)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O3 -Wall -Wextra -std=c99
   ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O3 -Wall -Wextra
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-  LIBS += bin/release/libgrt.lib
-  LDDEPS += bin/release/libgrt.lib
+  LIBS += bin/release/libgum.lib
+  LDDEPS += bin/release/libgum.lib
   ALL_LDFLAGS += $(LDFLAGS) -s
   LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
@@ -49,8 +49,8 @@ ifeq ($(config),debug)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -Wall -Wextra -std=c99
   ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -Wall -Wextra
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-  LIBS += bin/debug/libgrt.lib
-  LDDEPS += bin/debug/libgrt.lib
+  LIBS += bin/debug/libgum.lib
+  LDDEPS += bin/debug/libgum.lib
   ALL_LDFLAGS += $(LDFLAGS)
   LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
@@ -67,6 +67,7 @@ endif
 OBJECTS := \
 	$(OBJDIR)/error.o \
 	$(OBJDIR)/input.o \
+	$(OBJDIR)/lexer.o \
 	$(OBJDIR)/main.o \
 
 RESOURCES := \
@@ -128,6 +129,14 @@ else
 endif
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/input.o: src/gob/input.c
+	@echo $(notdir $<)
+ifeq (posix,$(SHELLTYPE))
+	$(SILENT) mkdir -p $(OBJDIR)
+else
+	$(SILENT) mkdir $(subst /,\\,$(OBJDIR))
+endif
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/lexer.o: src/gob/lexer.c
 	@echo $(notdir $<)
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) mkdir -p $(OBJDIR)

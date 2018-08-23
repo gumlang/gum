@@ -13,8 +13,8 @@ endif
 ifeq ($(config),release)
   RESCOMP = windres
   TARGETDIR = bin/release
-  TARGET = $(TARGETDIR)/libgrt.dll
-  OBJDIR = bin/obj/release/libgrt
+  TARGET = $(TARGETDIR)/libgum.dll
+  OBJDIR = bin/obj/release/libgum
   DEFINES += -DGUM_BUILD
   INCLUDES += -Isrc/include
   FORCE_INCLUDE +=
@@ -24,7 +24,7 @@ ifeq ($(config),release)
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS +=
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -shared -Wl,--out-implib="bin/release/libgrt.lib" -s
+  ALL_LDFLAGS += $(LDFLAGS) -shared -Wl,--out-implib="bin/release/libgum.lib" -s
   LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -40,8 +40,8 @@ endif
 ifeq ($(config),debug)
   RESCOMP = windres
   TARGETDIR = bin/debug
-  TARGET = $(TARGETDIR)/libgrt.dll
-  OBJDIR = bin/obj/debug/libgrt
+  TARGET = $(TARGETDIR)/libgum.dll
+  OBJDIR = bin/obj/debug/libgum
   DEFINES += -DGUM_DEBUG -DGUM_BUILD
   INCLUDES += -Isrc/include
   FORCE_INCLUDE +=
@@ -51,7 +51,7 @@ ifeq ($(config),debug)
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS +=
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -shared -Wl,--out-implib="bin/debug/libgrt.lib"
+  ALL_LDFLAGS += $(LDFLAGS) -shared -Wl,--out-implib="bin/debug/libgum.lib"
   LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -82,7 +82,7 @@ ifeq (/bin,$(findstring /bin,$(SHELL)))
 endif
 
 $(TARGET): $(GCH) ${CUSTOMFILES} $(OBJECTS) $(LDDEPS) $(RESOURCES)
-	@echo Linking libgrt
+	@echo Linking libgum
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) mkdir -p $(TARGETDIR)
 else
@@ -92,7 +92,7 @@ endif
 	$(POSTBUILDCMDS)
 
 clean:
-	@echo Cleaning libgrt
+	@echo Cleaning libgum
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
 	$(SILENT) rm -rf $(OBJDIR)
@@ -119,7 +119,7 @@ endif
 	$(SILENT) $(CC) -x c-header $(ALL_CFLAGS) -o "$@" -MF "$(@:%.gch=%.d)" -c "$<"
 endif
 
-$(OBJDIR)/array.o: src/libgrt/util/array.c
+$(OBJDIR)/array.o: src/libgum/util/array.c
 	@echo $(notdir $<)
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) mkdir -p $(OBJDIR)
@@ -127,7 +127,7 @@ else
 	$(SILENT) mkdir $(subst /,\\,$(OBJDIR))
 endif
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/map.o: src/libgrt/util/map.c
+$(OBJDIR)/map.o: src/libgum/util/map.c
 	@echo $(notdir $<)
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) mkdir -p $(OBJDIR)
@@ -135,7 +135,7 @@ else
 	$(SILENT) mkdir $(subst /,\\,$(OBJDIR))
 endif
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/string.o: src/libgrt/util/string.c
+$(OBJDIR)/string.o: src/libgum/util/string.c
 	@echo $(notdir $<)
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) mkdir -p $(OBJDIR)

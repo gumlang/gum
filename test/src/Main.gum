@@ -1,5 +1,5 @@
-Foo Bar
-Hello World
-Baz
-Error! no..
-Hi there
+import lang.App
+
+static main get = <> {
+	App.out.println("Hello, World!")
+}

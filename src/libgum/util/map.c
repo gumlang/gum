@@ -1,5 +1,4 @@
 #include <gum/map.h>
-#include <gum/string.h>
 #include <string.h>
 
 typedef struct map_entry_t {
