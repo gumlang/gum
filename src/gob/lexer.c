@@ -3,6 +3,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#define ERROR_UNKNOWN_CHAR "Unknown character %c"
+#define ERROR_UNEXPECTED_CHAR "Expected %s, got character %c"
+#define ERROR_UNEXPECTED_EOF "Expected %s, got end of file"
+
 #define TOKEN_ADD_KW(name) \
 	*(unsigned short*)gum_map_add(&g_keywords, -1, #name) = GUM_TOKEN_KW_##name
 
@@ -11,20 +15,39 @@ static gum_map_t g_keywords;
 static gum_token_t g_token;
 static _Bool g_peeked;
 
-static char lexer_read_char() {
-	gum_char_t c = gum_input_next();
+static gum_int_t lexer_convert_hex(gum_char_t c) {
+	if (isdigit(c.c)) {
+		return c.c - '0';
+	} else if (c.c >= 'A' && c.c <= 'F') {
+		return c.c - 'A' + 10;
+	} else if (c.c >= 'a' && c.c <= 'f') {
+		return c.c - 'a' + 10;
+	} else {
+		const char* expected = "hexadecimal digit";
+		if (c.c == -1) {
+			gum_input_error(c, ERROR_UNEXPECTED_EOF, expected);
+		} else {
+			gum_input_error(c, ERROR_UNEXPECTED_CHAR, expected, c.c);
+		}
+		return 0;
+	}
+}
+
+static gum_int_t lexer_convert_char(gum_char_t c) {
 	if (c.c == -1) {
-		gum_input_error(c, "Unexpected end of file");
+		gum_input_error(c, ERROR_UNEXPECTED_EOF, "character");
 	} else if (c.c == '\\') {
 		c = gum_input_next();
 		if (c.c == -1) {
-			gum_input_error(c, "Unexpected end of file");
+			gum_input_error(c, ERROR_UNEXPECTED_EOF, "escape character");
 		} else if (c.c == 't') {
 			return '\t';
 		} else if (c.c == 'n') {
 			return '\n';
 		} else if (c.c == 'r') {
 			return '\r';
+		} else if (c.c == 'x' || c.c == 'X') {
+			return (lexer_convert_hex(gum_input_next()) << 4) | lexer_convert_hex(gum_input_next());
 		} else {
 			return c.c;
 		}
@@ -98,15 +121,7 @@ static void lexer_number() {
 		if (c.c == 'x' || c.c == 'X') {
 			gum_input_next();
 			while (isxdigit((c = gum_input_peek()).c)) {
-				gum_input_next();
-				g_token.data.i <<= 4;
-				if (isdigit(c.c)) {
-					g_token.data.i |= c.c - '0';
-				} else if (isupper(c.c)) {
-					g_token.data.i |= c.c - 'A';
-				} else {
-					g_token.data.i |= c.c - 'a';
-				}
+				g_token.data.i = (g_token.data.i << 4) | lexer_convert_hex(gum_input_next());
 			}
 			return;
 		}
@@ -122,11 +137,11 @@ static void lexer_number() {
 			if (isdigit(c.c)) {
 				exp = exp * 10 + (c.c - '0');
 			} else {
-				gum_input_error(c, "Unexpected character '%c'", c.c);
+				gum_input_error(c, ERROR_UNEXPECTED_CHAR, "digit", c.c);
 			}
 		} else if (c.c == '.') {
 			if (div > 0) {
-				gum_input_error(c, "Unexpected character '%c'", c.c);
+				gum_input_error(c, ERROR_UNEXPECTED_CHAR, "digit or E", c.c);
 			} else {
 				div = 1;
 			}
@@ -155,7 +170,12 @@ static void lexer_char() {
 	gum_char_t c = gum_input_next();
 	g_token.pos = c;
 	g_token.type = GUM_TOKEN_INT;
-	g_token.data.i = lexer_read_char();
+	g_token.data.i = lexer_convert_char(gum_input_next());
+	
+	c = gum_input_next();
+	if (c.c != '\'') {
+		gum_input_error(c, ERROR_UNEXPECTED_CHAR, "character '", c.c);
+	}
 }
 
 static void lexer_string() {
@@ -164,11 +184,10 @@ static void lexer_string() {
 	g_token.type = GUM_TOKEN_STRING;
 	gum_string_create(&g_token.data.s);
 
-	while ((c = gum_input_peek()).c != '"') {
-		char c = lexer_read_char();
-		gum_string_add(&g_token.data.s, -1, 1, &c);
+	while ((c = gum_input_next()).c != '"') {
+		char value = lexer_convert_char(c);
+		gum_string_add(&g_token.data.s, -1, 1, &value);
 	}
-	gum_input_next();
 }
 
 void gum_lexer_init(const char* path) {
@@ -228,7 +247,7 @@ gum_token_t gum_lexer_peek() {
 				lexer_string();
 				break;
 			} else {
-				gum_input_error(c, "Unknown character '%c'", c.c);
+				gum_input_error(c, ERROR_UNKNOWN_CHAR, c.c);
 			}
 		}
 		g_peeked = 1;
