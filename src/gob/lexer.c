@@ -158,14 +158,18 @@ static void lexer_char() {
 	g_token.data.i = lexer_read_char();
 }
 
-// static void lexer_string() {
-// 	gum_char_t c = gum_input_next();
-// 	g_token.pos = c;
-// 	g_token.type = GUM_TOKEN_STRING;
-// 	gum_string_create(&g_token.data.s);
+static void lexer_string() {
+	gum_char_t c = gum_input_next();
+	g_token.pos = c;
+	g_token.type = GUM_TOKEN_STRING;
+	gum_string_create(&g_token.data.s);
 
-	
-// }
+	while ((c = gum_input_peek()).c != '"') {
+		char c = lexer_read_char();
+		gum_string_add(&g_token.data.s, -1, 1, &c);
+	}
+	gum_input_next();
+}
 
 void gum_lexer_init(const char* path) {
 	gum_input_init(path);
@@ -219,6 +223,9 @@ gum_token_t gum_lexer_peek() {
 				break;
 			} else if (c.c == '\'') {
 				lexer_char();
+				break;
+			} else if (c.c == '"') {
+				lexer_string();
 				break;
 			} else {
 				gum_input_error(c, "Unknown character '%c'", c.c);
