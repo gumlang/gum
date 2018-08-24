@@ -1,7 +1,7 @@
 import lang.App
 
-static x = 5
-static y = 3.1
+static x = 0x100
+static y = 'a'
 
 static main get = <> {
 	App.out.println("Hello, World!")
