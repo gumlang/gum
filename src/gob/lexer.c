@@ -81,15 +81,80 @@ static void lexer_next_name() {
 	g_token.type = GUM_TOKEN_NAME;
 	gum_string_create(&g_token.data.s);
 
-	do {
+	while (isalnum((c = gum_input_peek()).c) || c.c == '_') {
 		char value = gum_input_next().c;
 		gum_string_add(&g_token.data.s, -1, 1, &value);
-	} while (isalnum((c = gum_input_peek()).c) || c.c == '_');
+	}
 
 	unsigned short* kw = gum_map_get(&g_keywords, g_token.data.s.size, g_token.data.s.data);
 	if (kw != NULL) {
 		g_token.type = *kw;
 		gum_string_destroy(&g_token.data.s);
+	}
+}
+
+static void lexer_next_number() {
+	gum_char_t c = gum_input_peek();
+	g_token.pos = c;
+	g_token.type = GUM_TOKEN_INT;
+	g_token.data.i = 0;
+
+	if (c.c == '0') {
+		gum_input_next();
+		c = gum_input_peek();
+		if (c.c == 'x' || c.c == 'X') {
+			gum_input_next();
+			while (isxdigit((c = gum_input_peek()).c)) {
+				gum_input_next();
+				g_token.data.i <<= 4;
+				if (isdigit(c.c)) {
+					g_token.data.i |= c.c - '0';
+				} else if (isupper(c.c)) {
+					g_token.data.i |= c.c - 'A';
+				} else {
+					g_token.data.i |= c.c - 'a';
+				}
+			}
+			return;
+		}
+	}
+
+	gum_int_t div = 0;
+	gum_int_t exp = 0;
+	_Bool e = 0;
+
+	while (isdigit((c = gum_input_peek()).c) || strchr(".eE", c.c) != NULL) {
+		gum_input_next();
+		if (e) {
+			if (isdigit(c.c)) {
+				exp = exp * 10 + (c.c - '0');
+			} else {
+				gum_input_error(c, "Unexpected character '%c'", c.c);
+			}
+		} else if (c.c == '.') {
+			if (div > 0) {
+				gum_input_error(c, "Unexpected character '%c'", c.c);
+			} else {
+				div = 1;
+			}
+		} else if (c.c == 'e' || c.c == 'E') {
+			e = 1;
+		} else {
+			g_token.data.i = g_token.data.i * 10 + (c.c - '0');
+			div *= 10;
+		}
+	}
+
+	if (div == 0) {
+		for (; exp > 0; --exp) {
+			g_token.data.i *= 10;
+		}
+	} else {
+		g_token.type = GUM_TOKEN_FLOAT;
+		g_token.data.f = (gum_float_t)g_token.data.i / div;
+		for (; exp > 0; --exp) {
+			g_token.data.f *= 10;
+		}
 	}
 }
 
@@ -111,6 +176,9 @@ gum_token_t gum_lexer_peek() {
 				}
 			} else if (isalpha(c.c) || c.c == '_') {
 				lexer_next_name();
+				break;
+			} else if (isdigit(c.c)) {
+				lexer_next_number();
 				break;
 			} else {
 				gum_input_error(c, "Unknown character '%c'", c.c);

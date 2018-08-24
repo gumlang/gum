@@ -22,6 +22,10 @@ int main() {
 			fwrite(token.data.s.data, token.data.s.size, 1, stdout);
 			putchar('\n');
 			gum_string_destroy(&token.data.s);
+		} else if (token.type == GUM_TOKEN_INT) {
+			printf("\t%i\n", token.data.i);
+		} else if (token.type == GUM_TOKEN_FLOAT) {
+			printf("\t%f\n", token.data.f);
 		}
 	}
 }
