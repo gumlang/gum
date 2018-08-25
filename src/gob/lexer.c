@@ -228,12 +228,6 @@ void gum_lexer_create(gum_lexer_t* lexer, const char* path) {
 	TOKEN_ADD_KW(lexer, continue);
 	TOKEN_ADD_KW(lexer, break);
 	TOKEN_ADD_KW(lexer, return);
-
-	TOKEN_ADD_KW(lexer, any);
-	TOKEN_ADD_KW(lexer, type);
-	TOKEN_ADD_KW(lexer, int);
-	TOKEN_ADD_KW(lexer, float);
-	TOKEN_ADD_KW(lexer, bool);
 	TOKEN_ADD_KW(lexer, true);
 	TOKEN_ADD_KW(lexer, false);
 }

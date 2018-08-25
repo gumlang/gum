@@ -30,12 +30,6 @@ typedef enum gum_token_type_t {
 	GUM_TOKEN_KW_continue,
 	GUM_TOKEN_KW_break,
 	GUM_TOKEN_KW_return,
-
-	GUM_TOKEN_KW_any,
-	GUM_TOKEN_KW_type,
-	GUM_TOKEN_KW_int,
-	GUM_TOKEN_KW_float,
-	GUM_TOKEN_KW_bool,
 	GUM_TOKEN_KW_true,
 	GUM_TOKEN_KW_false,
 } gum_token_type_t;
