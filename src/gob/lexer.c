@@ -1,30 +1,50 @@
 #include "lexer.h"
-#include <gum/map.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
 
-#define TOKEN_ADD_KW(name) \
-	*(unsigned short*)gum_map_add(&g_keywords, -1, #name) = GUM_TOKEN_KW_##name
+#define TOKEN_ADD_KW(lexer, name) \
+	*(gum_int_t*)gum_map_add(&(lexer)->keywords, -1, #name) = GUM_TOKEN_KW_##name
 
-static gum_map_t g_keywords;
-
-static gum_token_t g_token;
-static _Bool g_peeked;
-
-static void lexer_error_expected(const char* expected, gum_char_t got) {
-	if (got.c == -1) {
-		gum_input_error(got, "Expected %s, got end of file", expected);
-	} else if (got.c == '\n') {
-		gum_input_error(got, "Expected %s, got new line", expected);
-	} else if (got.c == '\t') {
-		gum_input_error(got, "Expected %s, got tab", expected);
+static void lexer_error(gum_lexer_t* lexer, gum_char_t c, const char* expected) {
+	char* got;
+	if (c.c == -1) {
+		got = "end of file";
+	} else if (c.c == '\n') {
+		got = "new line";
+	} else if (c.c == '\t') {
+		got = "tab";
+	} else if (c.c == '\'') {
+		got = "single quote";
+	} else if (c.c == '"') {
+		got = "double quote";
 	} else {
-		gum_input_error(got, "Expected %s, got character '%c'", expected, got.c);
+		const char format[] = "character '$'";
+		gum_int_t size = sizeof(format);
+		got = malloc(size);
+		for (gum_int_t i = 0; i < size; ++i) {
+			if (format[i] == '$') {
+				got[i] = c.c;
+			} else {
+				got[i] = format[i];
+			}
+		}
 	}
+
+	gum_input_error(&lexer->input, c, "Expected %s, got %s", expected, got);
 }
 
-static gum_int_t lexer_convert_hex(gum_char_t c) {
+static inline gum_char_t input_peek(gum_lexer_t* lexer) {
+	return gum_input_peek(&lexer->input);
+}
+
+static inline gum_char_t input_next(gum_lexer_t* lexer) {
+	return gum_input_next(&lexer->input);
+}
+
+static gum_int_t input_next_hex(gum_lexer_t* lexer) {
+	gum_char_t c = input_next(lexer);
 	if (isdigit(c.c)) {
 		return c.c - '0';
 	} else if (c.c >= 'A' && c.c <= 'F') {
@@ -32,18 +52,19 @@ static gum_int_t lexer_convert_hex(gum_char_t c) {
 	} else if (c.c >= 'a' && c.c <= 'f') {
 		return c.c - 'a' + 10;
 	} else {
-		lexer_error_expected("hexadecimal digit", c);
+		lexer_error(lexer, c, "hexadecimal digit");
 		return 0;
 	}
 }
 
-static gum_int_t lexer_convert_char(gum_char_t c) {
+static gum_int_t input_next_char(gum_lexer_t* lexer) {
+	gum_char_t c = input_next(lexer);
 	if (c.c == -1) {
-		lexer_error_expected("character", c);
+		lexer_error(lexer, c, "character");
 	} else if (c.c == '\\') {
-		c = gum_input_next();
+		c = input_next(lexer);
 		if (c.c == -1) {
-			lexer_error_expected("escape character", c);
+			lexer_error(lexer, c, "escape character");
 		} else if (c.c == 't') {
 			return '\t';
 		} else if (c.c == 'n') {
@@ -51,7 +72,7 @@ static gum_int_t lexer_convert_char(gum_char_t c) {
 		} else if (c.c == 'r') {
 			return '\r';
 		} else if (c.c == 'x' || c.c == 'X') {
-			return (lexer_convert_hex(gum_input_next()) << 4) | lexer_convert_hex(gum_input_next());
+			return (input_next_hex(lexer) << 4) | input_next_hex(lexer);
 		} else {
 			return c.c;
 		}
@@ -59,190 +80,211 @@ static gum_int_t lexer_convert_char(gum_char_t c) {
 	return c.c;
 }
 
-static _Bool lexer_symbol() {
-	gum_char_t c = gum_input_next();
-	g_token.pos = c;
-	g_token.type = c.c;
-
-	if (strchr("<>=|&", c.c) != NULL && gum_input_peek().c == c.c) {
-		gum_input_next();
-		g_token.type |= GUM_TOKEN_FLAG_DOUBLE;
-	}
-
-	if (strchr("<>+-*/%~|&^", c.c) != NULL && gum_input_peek().c == '=') {
-		gum_input_next();
-		g_token.type |= GUM_TOKEN_FLAG_ASSIGN;
-	}
+static gum_int_t lexer_next_symbol(gum_lexer_t* lexer) {
+	gum_char_t c = input_next(lexer);
+	gum_int_t symbol = c.c;
 
 	if (c.c == '/') {
-		c = gum_input_peek();
+		c = input_peek(lexer);
 		if (c.c == '/') {
-			while (gum_input_next().c != '\n');
-			return 0;
+			while (input_next(lexer).c != '\n');
+			return -1;
 		}
 		if (c.c == '*') {
 			for (;;) {
-				if (gum_input_next().c == '*') {
-					if (gum_input_next().c == '/') {
+				if (input_next(lexer).c == '*') {
+					if (input_next(lexer).c == '/') {
 						break;
 					}
 				}
 			}
-			return 0;
+			return -1;
 		}
 	}
 
-	return 1;
+	if (strchr("<>=|&", c.c) != NULL && input_peek(lexer).c == c.c) {
+		input_next(lexer);
+		symbol |= GUM_TOKEN_FLAG_DOUBLE;
+	}
+	if (strchr("<>+-*/%~|&^", c.c) != NULL && input_peek(lexer).c == '=') {
+		input_next(lexer);
+		symbol |= GUM_TOKEN_FLAG_ASSIGN;
+	}
+	return symbol;
 }
 
-static void lexer_name() {
-	gum_char_t c = gum_input_peek();
-	g_token.pos = c;
-	g_token.type = GUM_TOKEN_NAME;
-	gum_string_create(&g_token.data.s);
+static gum_token_t lexer_next_name(gum_lexer_t* lexer) {
+	gum_char_t c = input_peek(lexer);
+	gum_token_t token;
+	token.pos = c;
+	token.type = GUM_TOKEN_NAME;
+	gum_string_create(&token.data.s);
 
-	while (isalnum((c = gum_input_peek()).c) || c.c == '_') {
-		char value = gum_input_next().c;
-		gum_string_add(&g_token.data.s, -1, 1, &value);
+	while (isalnum((c = input_peek(lexer)).c) || c.c == '_') {
+		char value = input_next(lexer).c;
+		gum_string_add(&token.data.s, -1, 1, &value);
 	}
 
-	unsigned short* kw = gum_map_get(&g_keywords, g_token.data.s.size, g_token.data.s.data);
+	gum_int_t* kw = gum_map_get(&lexer->keywords, token.data.s.size, token.data.s.data);
 	if (kw != NULL) {
-		g_token.type = *kw;
-		gum_string_destroy(&g_token.data.s);
+		token.type = *kw;
+		gum_string_destroy(&token.data.s);
 	}
+	return token;
 }
 
-static void lexer_number() {
-	gum_char_t c = gum_input_peek();
-	g_token.pos = c;
-	g_token.type = GUM_TOKEN_INT;
-	g_token.data.i = 0;
+static gum_token_t lexer_next_number(gum_lexer_t* lexer) {
+	gum_char_t c = input_peek(lexer);
+	gum_token_t token;
+	token.pos = c;
+	token.type = GUM_TOKEN_INT;
+	token.data.i = 0;
 
 	if (c.c == '0') {
-		gum_input_next();
-		c = gum_input_peek();
+		input_next(lexer);
+		c = input_peek(lexer);
 		if (c.c == 'x' || c.c == 'X') {
-			gum_input_next();
-			while (isxdigit((c = gum_input_peek()).c)) {
-				g_token.data.i = (g_token.data.i << 4) | lexer_convert_hex(gum_input_next());
+			input_next(lexer);
+			while (isxdigit(input_peek(lexer).c)) {
+				token.data.i = (token.data.i << 4) | input_next_hex(lexer);
 			}
-			return;
+			return token;
 		}
 	}
 
 	gum_int_t div = 0;
-	while (isdigit((c = gum_input_peek()).c) || c.c == '.') {
-		gum_input_next();
+	while (isdigit((c = input_peek(lexer)).c) || c.c == '.') {
+		input_next(lexer);
 		if (c.c == '.') {
 			if (div > 0) {
-				lexer_error_expected("digit", c);
+				lexer_error(lexer, c, "digit");
 			} else {
 				div = 1;
 			}
 		} else {
-			g_token.data.i = g_token.data.i * 10 + (c.c - '0');
+			token.data.i = token.data.i * 10 + (c.c - '0');
 			div *= 10;
 		}
 	}
 
 	if (div > 0) {
-		g_token.type = GUM_TOKEN_FLOAT;
-		g_token.data.f = (gum_float_t)g_token.data.i / div;
+		token.type = GUM_TOKEN_FLOAT;
+		token.data.f = (gum_float_t)token.data.i / div;
 	}
+	return token;
 }
 
-static void lexer_char() {
-	gum_char_t c = gum_input_next();
-	g_token.pos = c;
-	g_token.type = GUM_TOKEN_INT;
-	g_token.data.i = lexer_convert_char(gum_input_next());
+static gum_token_t lexer_next_char_token(gum_lexer_t* lexer) {
+	gum_char_t c = input_next(lexer);
+	gum_token_t token;
+	token.pos = c;
+	token.type = GUM_TOKEN_INT;
+
+	c = input_peek(lexer);
+	if (c.c == '\'') {
+		lexer_error(lexer, c, "character");
+	} else {
+		token.data.i = input_next_char(lexer);
+	}
 	
-	c = gum_input_next();
+	c = input_next(lexer);
 	if (c.c != '\'') {
-		lexer_error_expected("single quote", c);
+		lexer_error(lexer, c, "single quote");
 	}
+	return token;
 }
 
-static void lexer_string() {
-	gum_char_t c = gum_input_next();
-	g_token.pos = c;
-	g_token.type = GUM_TOKEN_STRING;
-	gum_string_create(&g_token.data.s);
+static gum_token_t lexer_next_string(gum_lexer_t* lexer) {
+	gum_char_t c = input_next(lexer);
+	gum_token_t token;
+	token.pos = c;
+	token.type = GUM_TOKEN_STRING;
+	gum_string_create(&token.data.s);
 
-	while ((c = gum_input_next()).c != '"') {
-		char value = lexer_convert_char(c);
-		gum_string_add(&g_token.data.s, -1, 1, &value);
+	while (input_peek(lexer).c != '"') {
+		char value = input_next_char(lexer);
+		gum_string_add(&token.data.s, -1, 1, &value);
 	}
+	input_next(lexer);
+	return token;
 }
 
-void gum_lexer_init(const char* path) {
-	gum_input_init(path);
+void gum_lexer_create(gum_lexer_t* lexer, const char* path) {
+	gum_input_create(&lexer->input, path);
+	gum_map_create(&lexer->keywords, sizeof(gum_int_t));
 
-	if (g_keywords.size == 0) {
-		gum_map_create(&g_keywords, sizeof(unsigned short));
-		TOKEN_ADD_KW(import);
-		TOKEN_ADD_KW(static);
-		TOKEN_ADD_KW(native);
-		TOKEN_ADD_KW(set);
-		TOKEN_ADD_KW(get);
-		TOKEN_ADD_KW(as);
-		TOKEN_ADD_KW(if);
-		TOKEN_ADD_KW(else);
-		TOKEN_ADD_KW(for);
-		TOKEN_ADD_KW(continue);
-		TOKEN_ADD_KW(break);
-		TOKEN_ADD_KW(return);
+	TOKEN_ADD_KW(lexer, import);
+	TOKEN_ADD_KW(lexer, static);
+	TOKEN_ADD_KW(lexer, native);
+	TOKEN_ADD_KW(lexer, set);
+	TOKEN_ADD_KW(lexer, get);
+	TOKEN_ADD_KW(lexer, as);
+	TOKEN_ADD_KW(lexer, is);
+	TOKEN_ADD_KW(lexer, if);
+	TOKEN_ADD_KW(lexer, else);
+	TOKEN_ADD_KW(lexer, while);
+	TOKEN_ADD_KW(lexer, for);
+	TOKEN_ADD_KW(lexer, in);
+	TOKEN_ADD_KW(lexer, continue);
+	TOKEN_ADD_KW(lexer, break);
+	TOKEN_ADD_KW(lexer, return);
 
-		TOKEN_ADD_KW(any);
-		TOKEN_ADD_KW(type);
-		TOKEN_ADD_KW(int);
-		TOKEN_ADD_KW(float);
-		TOKEN_ADD_KW(bool);
-		TOKEN_ADD_KW(true);
-		TOKEN_ADD_KW(false);
-	}
+	TOKEN_ADD_KW(lexer, any);
+	TOKEN_ADD_KW(lexer, type);
+	TOKEN_ADD_KW(lexer, int);
+	TOKEN_ADD_KW(lexer, float);
+	TOKEN_ADD_KW(lexer, bool);
+	TOKEN_ADD_KW(lexer, true);
+	TOKEN_ADD_KW(lexer, false);
 }
 
-gum_token_t gum_lexer_peek() {
-	if (!g_peeked) {
+void gum_lexer_destroy(gum_lexer_t* lexer) {
+	gum_map_destroy(&lexer->keywords);
+	gum_input_destroy(&lexer->input);
+}
+
+gum_token_t gum_lexer_peek(gum_lexer_t* lexer) {
+	if (!lexer->peeked) {
 		for (;;) {
 			gum_char_t c;
-			while (isspace((c = gum_input_peek()).c)) {
-				gum_input_next();
+			while (isspace((c = input_peek(lexer)).c)) {
+				input_next(lexer);
 			}
 
 			if (c.c == -1) {
-				g_token.pos = c;
-				g_token.type = GUM_TOKEN_EOF;
+				lexer->token.pos = c;
+				lexer->token.type = GUM_TOKEN_EOF;
 				break;
-			} else if (strchr("(){}<>[].,=+-*/%~|&^!#?", c.c) != NULL) {
-				if (lexer_symbol()) {
+			} else if (strchr("(){}<>[].,:=+-*/%~|&^!?", c.c) != NULL) {
+				gum_int_t symbol;
+				if ((symbol = lexer_next_symbol(lexer)) != -1) {
+					lexer->token.pos = c;
+					lexer->token.type = symbol;
 					break;
 				}
 			} else if (isalpha(c.c) || c.c == '_') {
-				lexer_name();
+				lexer->token = lexer_next_name(lexer);
 				break;
 			} else if (isdigit(c.c)) {
-				lexer_number();
+				lexer->token = lexer_next_number(lexer);
 				break;
 			} else if (c.c == '\'') {
-				lexer_char();
+				lexer->token = lexer_next_char_token(lexer);
 				break;
 			} else if (c.c == '"') {
-				lexer_string();
+				lexer->token = lexer_next_string(lexer);
 				break;
 			} else {
-				gum_input_error(c, "Unknown character '%c'", c.c);
+				gum_input_error(&lexer->input, c, "Unknown character '%c'", c.c);
 			}
 		}
-		g_peeked = 1;
+		lexer->peeked = 1;
 	}
-	return g_token;
+	return lexer->token;
 }
 
-gum_token_t gum_lexer_next() {
-	gum_lexer_peek();
-	g_peeked = 0;
-	return g_token;
+gum_token_t gum_lexer_next(gum_lexer_t* lexer) {
+	gum_lexer_peek(lexer);
+	lexer->peeked = 0;
+	return lexer->token;
 }

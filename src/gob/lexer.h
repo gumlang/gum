@@ -3,40 +3,46 @@
 #include "input.h"
 #include <gum.h>
 #include <gum/string.h>
+#include <gum/map.h>
 
 #define GUM_TOKEN_FLAG_DOUBLE 0x0080
 #define GUM_TOKEN_FLAG_ASSIGN 0x0100
 
-#define GUM_TOKEN_KW_import 0x0200
-#define GUM_TOKEN_KW_static 0x0400
-#define GUM_TOKEN_KW_native 0x0600
-#define GUM_TOKEN_KW_set 0x0800
-#define GUM_TOKEN_KW_get 0x0A00
-#define GUM_TOKEN_KW_as 0x0C00
-#define GUM_TOKEN_KW_if 0x0E00
-#define GUM_TOKEN_KW_else 0x1000
-#define GUM_TOKEN_KW_for 0x1200
-#define GUM_TOKEN_KW_continue 0x1400
-#define GUM_TOKEN_KW_break 0x1600
-#define GUM_TOKEN_KW_return 0x1800
+typedef enum gum_token_type_t {
+	GUM_TOKEN_EOF = 0x0200,
+	GUM_TOKEN_NAME,
+	GUM_TOKEN_INT,
+	GUM_TOKEN_FLOAT,
+	GUM_TOKEN_STRING,
 
-#define GUM_TOKEN_KW_any 0x1A00
-#define GUM_TOKEN_KW_type 0x1C00
-#define GUM_TOKEN_KW_int 0x1E00
-#define GUM_TOKEN_KW_float 0x2000
-#define GUM_TOKEN_KW_bool 0x2200
-#define GUM_TOKEN_KW_true 0x2400
-#define GUM_TOKEN_KW_false 0x2600
+	GUM_TOKEN_KW_import,
+	GUM_TOKEN_KW_static,
+	GUM_TOKEN_KW_native,
+	GUM_TOKEN_KW_set,
+	GUM_TOKEN_KW_get,
+	GUM_TOKEN_KW_as,
+	GUM_TOKEN_KW_is,
+	GUM_TOKEN_KW_if,
+	GUM_TOKEN_KW_else,
+	GUM_TOKEN_KW_while,
+	GUM_TOKEN_KW_for,
+	GUM_TOKEN_KW_in,
+	GUM_TOKEN_KW_continue,
+	GUM_TOKEN_KW_break,
+	GUM_TOKEN_KW_return,
 
-#define GUM_TOKEN_EOF 0x8000
-#define GUM_TOKEN_NAME 0x8200
-#define GUM_TOKEN_INT 0x8400
-#define GUM_TOKEN_FLOAT 0x8600
-#define GUM_TOKEN_STRING 0x8800
+	GUM_TOKEN_KW_any,
+	GUM_TOKEN_KW_type,
+	GUM_TOKEN_KW_int,
+	GUM_TOKEN_KW_float,
+	GUM_TOKEN_KW_bool,
+	GUM_TOKEN_KW_true,
+	GUM_TOKEN_KW_false,
+} gum_token_type_t;
 
 typedef struct gum_token_t {
 	gum_char_t pos;
-	unsigned short type;
+	gum_int_t type;
 	union {
 		gum_int_t i;
 		gum_float_t f;
@@ -44,10 +50,16 @@ typedef struct gum_token_t {
 	} data;
 } gum_token_t;
 
+typedef struct gum_lexer_t {
+	gum_input_t input;
+	gum_map_t keywords;
+	gum_token_t token;
+	_Bool peeked;
+} gum_lexer_t;
 
-
-void gum_lexer_init(const char* path);
-gum_token_t gum_lexer_peek();
-gum_token_t gum_lexer_next();
+void gum_lexer_create(gum_lexer_t* lexer, const char* path);
+void gum_lexer_destroy(gum_lexer_t* lexer);
+gum_token_t gum_lexer_peek(gum_lexer_t* lexer);
+gum_token_t gum_lexer_next(gum_lexer_t* lexer);
 
 #endif

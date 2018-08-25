@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ARRAY_GET(array, index) ((array)->data + (index) * (array)->value_size)
+static inline void* array_get(gum_array_t* array, gum_int_t index) {
+	return array->data + index * array->value_size;
+}
 
 static void* array_resize(gum_array_t* array, gum_int_t index, gum_int_t size, gum_int_t resize) {
 	if (index == -1) {
@@ -26,13 +28,13 @@ static void* array_resize(gum_array_t* array, gum_int_t index, gum_int_t size, g
 	gum_int_t move = array->size - index - size;
 	if (move > 0) {
 		memmove(
-			ARRAY_GET(array, index + resize),
-			ARRAY_GET(array, index + size),
+			array_get(array, index + resize),
+			array_get(array, index + size),
 			move * array->value_size
 		);
 	}
 	array->size = capacity;
-	return ARRAY_GET(array, index);
+	return array_get(array, index);
 }
 
 GUM_API void gum_array_create(gum_array_t* array, gum_int_t value_size) {
@@ -55,5 +57,5 @@ GUM_API void gum_array_remove(gum_array_t* array, gum_int_t index, gum_int_t siz
 }
 
 GUM_API void* gum_array_get(gum_array_t* array, gum_int_t index) {
-	return ARRAY_GET(array, index);
+	return array_get(array, index);
 }

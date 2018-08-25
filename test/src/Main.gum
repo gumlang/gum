@@ -1,10 +1,17 @@
 import lang.App
 
-static x = 12
-static y = 3.4
+// this is a single line comment
+
+/* this is a 
+ * multiline comment
+ */
+
+static a = 12
+static b = 3.4
+static c = 'c'
 
 static main get = <> {
 	App.out.println("Hello, World!")
 }
 
-static z = '\xFZ'
+static d = '\xFZ'
