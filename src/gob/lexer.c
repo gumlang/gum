@@ -109,7 +109,6 @@ static gum_token_t lexer_next_name(gum_lexer_t* lexer) {
 	gum_string_create(&token.data.s);
 
 	while (isalnum((c = input_peek(lexer)).c) || c.c == '_') {
-		char value = input_next(lexer).c;
 		*gum_string_add_empty(&token.data.s, -1, 1) = input_next(lexer).c;
 	}
 
@@ -221,7 +220,7 @@ gum_token_t gum_lexer_peek(gum_lexer_t* lexer) {
 				lexer->token.pos = c;
 				lexer->token.type = GUM_TOKEN_EOF;
 				break;
-			} else if (strchr("(){}<>[].,:=+-*/%~|&^!?", c.c) != NULL) {
+			} else if (strchr("(){}<>[].,=+-*/%~|&^!?:", c.c) != NULL) {
 				gum_int_t symbol;
 				if ((symbol = lexer_next_symbol(lexer)) != -1) {
 					lexer->token.pos = c;

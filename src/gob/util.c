@@ -10,7 +10,7 @@ char* gum_alloc_printf(const char* format, ...) {
 	gum_int_t size = vsnprintf(NULL, 0, format, list) + 1;
 	va_end(list);
 	
-	const char* string = malloc(size);
+	char* string = malloc(size);
 	va_start(list, format);
 	vsnprintf(string, size, format, list);
 	va_end(list);

@@ -1,10 +1,8 @@
 #include "ast.h"
 #include "lexer.h"
-#include "input.h"
 #include "util.h"
-
-#define ERROR_ADD_KW(name) \
-	case GUM_TOKEN_KW_##name: got = #name; break
+#include <stdlib.h>
+#include <string.h>
 
 static void ast_error(gum_lexer_t* lexer, gum_token_t token, const char* expected) {
 	const char* got;
@@ -43,13 +41,135 @@ static void ast_error(gum_lexer_t* lexer, gum_token_t token, const char* expecte
 	gum_input_error(&lexer->input, token.pos, "Expected %s, got %s", expected, got);
 }
 
-// static gum_node_t ast_parse_value(gum_lexer_t* lexer) {
-// 	gum_token_t token = gum_lexer_next(lexer);
-// 	if (token.type == '')
-// }
+static gum_node_t* ast_node_create(gum_node_type_t type) {
+	gum_node_t* node = malloc(sizeof(gum_node_t));
+	node->type = type;
+	node->child.a = NULL;
+	node->child.b = NULL;
+	node->child.c = NULL;
+	node->data.s.data = NULL;
+	node->data.a.data = NULL;
+	return node;
+}
+
+static gum_node_t* ast_parse_expr(gum_lexer_t* lexer);
+
+static gum_node_t* ast_parse_value(gum_lexer_t* lexer) {
+	gum_token_t token = gum_lexer_next(lexer);
+	gum_node_t* node;
+	switch (token.type) {
+		case '+':
+		case '-':
+		case '~':
+		case '!':
+		case '?':
+			node = ast_node_create(GUM_NODE_UNARY);
+			node->child.a = ast_parse_value(lexer);
+			node->data.i = token.type;
+			return node;
+		case '(':
+			node = ast_parse_expr(lexer);
+			token = gum_lexer_next(lexer);
+			if (token.type != ')') {
+				ast_error(lexer, token, "symbol )");
+			}
+			return node;
+		case GUM_TOKEN_NAME:
+			node = ast_node_create(GUM_NODE_NAME);
+			node->data.s = token.data.s;
+			return node;
+		case GUM_TOKEN_INT:
+			node = ast_node_create(GUM_NODE_INT);
+			node->data.i = token.data.i;
+			return node;
+		case GUM_TOKEN_FLOAT:
+			node = ast_node_create(GUM_NODE_FLOAT);
+			node->data.f = token.data.f;
+			return node;
+		case GUM_TOKEN_STRING:
+			node = ast_node_create(GUM_NODE_STRING);
+			node->data.s = token.data.s;
+			return node;
+		case GUM_TOKEN_KW_false:
+		case GUM_TOKEN_KW_true:
+			node = ast_node_create(GUM_NODE_BOOL);
+			node->data.b = token.type == GUM_TOKEN_KW_true;
+			return node;
+		default:
+			ast_error(lexer, token, "value");
+			return NULL;
+	}
+}
+
+static gum_int_t ast_precedence(gum_int_t type) {
+	switch (type) {
+		case '.':
+			return 11;
+		case '*':
+		case '/':
+		case '%':
+			return 10;
+		case '+':
+		case '-':
+			return 9;
+		case '<' | GUM_TOKEN_FLAG_DOUBLE:
+		case '>' | GUM_TOKEN_FLAG_DOUBLE:
+			return 8;
+		case '&':
+			return 7;
+		case '^':
+			return 6;
+		case '|':
+			return 5;
+		case '=' | GUM_TOKEN_FLAG_ASSIGN:
+		case '!' | GUM_TOKEN_FLAG_ASSIGN:
+		case '<' | GUM_TOKEN_FLAG_ASSIGN:
+		case '>' | GUM_TOKEN_FLAG_ASSIGN:
+		case '<':
+		case '>':
+			return 4;
+		case '&' | GUM_TOKEN_FLAG_DOUBLE:
+			return 3;
+		case '|' | GUM_TOKEN_FLAG_DOUBLE:
+			return 2;
+		case GUM_TOKEN_KW_as:
+		case GUM_TOKEN_KW_is:
+			return 1;
+		default:
+			return -1;
+	}
+}
+
+static gum_node_t* ast_parse_binary(gum_lexer_t* lexer, gum_int_t prec) {
+	gum_node_t* left = ast_parse_value(lexer);
+	gum_int_t next_prec;
+	while ((next_prec = ast_precedence(gum_lexer_peek(lexer).type)) > prec) {
+		gum_node_t* node = ast_node_create(GUM_NODE_BINARY);
+		node->data.i = gum_lexer_next(lexer).type;
+		node->child.a = left;
+		node->child.b = ast_parse_binary(lexer, next_prec);
+		left = node;
+	}
+	return left;
+}
+
+static gum_node_t* ast_parse_expr(gum_lexer_t* lexer) {
+	return ast_parse_binary(lexer, 0);
+}
 
 gum_node_t* gum_ast_parse(const char* path) {
 	gum_lexer_t lexer;
 	gum_lexer_create(&lexer, path);
-	return NULL;
+	return ast_parse_expr(&lexer);
+}
+
+void gum_ast_destroy(gum_node_t* node) {
+	if (node != NULL) {
+		gum_ast_destroy(node->child.a);
+		gum_ast_destroy(node->child.b);
+		gum_ast_destroy(node->child.c);
+		gum_string_destroy(&node->data.s);
+		gum_array_destroy(&node->data.a);
+		free(node);
+	}
 }
