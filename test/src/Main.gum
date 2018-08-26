@@ -1,17 +1,1 @@
-import lang.App
-
-// this is a single line comment
-
-/* this is a 
- * multiline comment
- */
-
-static a = 12
-static b = 3.4
-static c = 'c'
-
-static main get = <> {
-	App.out.println("Hello, World!")
-}
-
-static d = '\xFZ'
+a = 12

@@ -1,14 +1,11 @@
 #include "lexer.h"
+#include "util.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
-
-#define TOKEN_ADD_KW(lexer, name) \
-	*(gum_int_t*)gum_map_add(&(lexer)->keywords, -1, #name) = GUM_TOKEN_KW_##name
-
 static void lexer_error(gum_lexer_t* lexer, gum_char_t c, const char* expected) {
-	char* got;
+	const char* got;
 	if (c.c == -1) {
 		got = "end of file";
 	} else if (c.c == '\n') {
@@ -20,16 +17,7 @@ static void lexer_error(gum_lexer_t* lexer, gum_char_t c, const char* expected) 
 	} else if (c.c == '"') {
 		got = "double quote";
 	} else {
-		const char format[] = "character '$'";
-		gum_int_t size = sizeof(format);
-		got = malloc(size);
-		for (gum_int_t i = 0; i < size; ++i) {
-			if (format[i] == '$') {
-				got[i] = c.c;
-			} else {
-				got[i] = format[i];
-			}
-		}
+		got = gum_alloc_printf("character '%c'", c.c);
 	}
 
 	gum_input_error(&lexer->input, c, "Expected %s, got %s", expected, got);
@@ -122,7 +110,7 @@ static gum_token_t lexer_next_name(gum_lexer_t* lexer) {
 
 	while (isalnum((c = input_peek(lexer)).c) || c.c == '_') {
 		char value = input_next(lexer).c;
-		gum_string_add(&token.data.s, -1, 1, &value);
+		*gum_string_add_empty(&token.data.s, -1, 1) = input_next(lexer).c;
 	}
 
 	gum_int_t* kw = gum_map_get(&lexer->keywords, token.data.s.size, token.data.s.data);
@@ -202,8 +190,7 @@ static gum_token_t lexer_next_string(gum_lexer_t* lexer) {
 	gum_string_create(&token.data.s);
 
 	while (input_peek(lexer).c != '"') {
-		char value = input_next_char(lexer);
-		gum_string_add(&token.data.s, -1, 1, &value);
+		*gum_string_add_empty(&token.data.s, -1, 1) = input_next_char(lexer);
 	}
 	input_next(lexer);
 	return token;
@@ -212,24 +199,9 @@ static gum_token_t lexer_next_string(gum_lexer_t* lexer) {
 void gum_lexer_create(gum_lexer_t* lexer, const char* path) {
 	gum_input_create(&lexer->input, path);
 	gum_map_create(&lexer->keywords, sizeof(gum_int_t));
-
-	TOKEN_ADD_KW(lexer, import);
-	TOKEN_ADD_KW(lexer, static);
-	TOKEN_ADD_KW(lexer, native);
-	TOKEN_ADD_KW(lexer, set);
-	TOKEN_ADD_KW(lexer, get);
-	TOKEN_ADD_KW(lexer, as);
-	TOKEN_ADD_KW(lexer, is);
-	TOKEN_ADD_KW(lexer, if);
-	TOKEN_ADD_KW(lexer, else);
-	TOKEN_ADD_KW(lexer, while);
-	TOKEN_ADD_KW(lexer, for);
-	TOKEN_ADD_KW(lexer, in);
-	TOKEN_ADD_KW(lexer, continue);
-	TOKEN_ADD_KW(lexer, break);
-	TOKEN_ADD_KW(lexer, return);
-	TOKEN_ADD_KW(lexer, true);
-	TOKEN_ADD_KW(lexer, false);
+#	define GUM_KEYWORD_LEXER_MAP(kw) \
+		*(gum_int_t*)gum_map_add(&lexer->keywords, -1, #kw) = GUM_TOKEN_KW_##kw;
+	GUM_KEYWORDS(GUM_KEYWORD_LEXER_MAP)
 }
 
 void gum_lexer_destroy(gum_lexer_t* lexer) {

@@ -1,5 +1,5 @@
 #include "input.h"
-#include "error.h"
+#include "util.h"
 #include <gum/string.h>
 #include <stdlib.h>
 #include <stdarg.h>

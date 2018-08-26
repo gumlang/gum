@@ -15,5 +15,6 @@ GUM_API void gum_string_add(gum_string_t* string, gum_int_t index, gum_int_t siz
 GUM_API char* gum_string_add_empty(gum_string_t* string, gum_int_t index, gum_int_t size);
 GUM_API void gum_string_remove(gum_string_t* string, gum_int_t index, gum_int_t size);
 GUM_API char gum_string_get(gum_string_t* string, gum_int_t index);
+GUM_API char* gum_string_cstr(gum_string_t* string);
 
 #endif

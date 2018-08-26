@@ -32,3 +32,9 @@ GUM_API void gum_string_remove(gum_string_t* string, gum_int_t index, gum_int_t 
 GUM_API char gum_string_get(gum_string_t* string, gum_int_t index) {
 	return string->data[index];
 }
+
+GUM_API char* gum_string_cstr(gum_string_t* string) {
+	*gum_string_add_empty(string, -1, 1) = '\0';
+	--string->size;
+	return string->data;
+}

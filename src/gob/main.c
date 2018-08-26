@@ -9,9 +9,9 @@
 #endif
 
 int main() {
-	#ifdef GUM_DEBUG
+#	ifdef GUM_DEBUG
 		atexit(freeze);
-	#endif
+#	endif
 
 	gum_lexer_t lexer;
 	gum_lexer_create(&lexer, "src/Main.gum");

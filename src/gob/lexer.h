@@ -1,6 +1,7 @@
 #ifndef GUM_LEXER_H_
 #define GUM_LEXER_H_
 #include "input.h"
+#include "keywords.h"
 #include <gum.h>
 #include <gum/string.h>
 #include <gum/map.h>
@@ -14,24 +15,9 @@ typedef enum gum_token_type_t {
 	GUM_TOKEN_INT,
 	GUM_TOKEN_FLOAT,
 	GUM_TOKEN_STRING,
-
-	GUM_TOKEN_KW_import,
-	GUM_TOKEN_KW_static,
-	GUM_TOKEN_KW_native,
-	GUM_TOKEN_KW_set,
-	GUM_TOKEN_KW_get,
-	GUM_TOKEN_KW_as,
-	GUM_TOKEN_KW_is,
-	GUM_TOKEN_KW_if,
-	GUM_TOKEN_KW_else,
-	GUM_TOKEN_KW_while,
-	GUM_TOKEN_KW_for,
-	GUM_TOKEN_KW_in,
-	GUM_TOKEN_KW_continue,
-	GUM_TOKEN_KW_break,
-	GUM_TOKEN_KW_return,
-	GUM_TOKEN_KW_true,
-	GUM_TOKEN_KW_false,
+#	define GUM_KEYWORD_TOKEN_TYPE(kw) \
+		GUM_TOKEN_KW_##kw,
+	GUM_KEYWORDS(GUM_KEYWORD_TOKEN_TYPE)
 } gum_token_type_t;
 
 typedef struct gum_token_t {
