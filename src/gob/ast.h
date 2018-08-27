@@ -14,6 +14,7 @@ typedef enum gum_node_type_t {
 
 	GUM_NODE_IMPORT,
 	GUM_NODE_PROP,
+	GUM_NODE_ASSIGN,
 	GUM_NODE_UNARY,
 	GUM_NODE_BINARY,
 	GUM_NODE_BLOCK,

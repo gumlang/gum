@@ -62,7 +62,6 @@ static gum_node_t* ast_parse_value(gum_lexer_t* lexer) {
 		case '-':
 		case '~':
 		case '!':
-		case '?':
 			node = ast_node_create(GUM_NODE_UNARY);
 			node->child.a = ast_parse_value(lexer);
 			node->data.i = token.type;
@@ -73,11 +72,11 @@ static gum_node_t* ast_parse_value(gum_lexer_t* lexer) {
 			if (token.type != ')') {
 				ast_error(lexer, token, "symbol )");
 			}
-			return node;
+			break;
 		case GUM_TOKEN_NAME:
 			node = ast_node_create(GUM_NODE_NAME);
 			node->data.s = token.data.s;
-			return node;
+			break;
 		case GUM_TOKEN_INT:
 			node = ast_node_create(GUM_NODE_INT);
 			node->data.i = token.data.i;
@@ -89,7 +88,7 @@ static gum_node_t* ast_parse_value(gum_lexer_t* lexer) {
 		case GUM_TOKEN_STRING:
 			node = ast_node_create(GUM_NODE_STRING);
 			node->data.s = token.data.s;
-			return node;
+			break;
 		case GUM_TOKEN_KW_false:
 		case GUM_TOKEN_KW_true:
 			node = ast_node_create(GUM_NODE_BOOL);
@@ -97,63 +96,88 @@ static gum_node_t* ast_parse_value(gum_lexer_t* lexer) {
 			return node;
 		default:
 			ast_error(lexer, token, "value");
-			return NULL;
+			break;
 	}
+
+	while (gum_lexer_peek(lexer).type == '.') {
+		gum_node_t* next_node = ast_node_create(GUM_NODE_BINARY);
+		next_node->data.i = gum_lexer_next(lexer).type;
+		next_node->child.a = node;
+
+		token = gum_lexer_next(lexer);
+		if (token.type == GUM_TOKEN_NAME) {
+			next_node->child.b = ast_node_create(GUM_NODE_NAME);
+			next_node->child.b->data.s = token.data.s;
+		}
+		node = next_node;
+	}
+	return node;
 }
 
 static gum_int_t ast_precedence(gum_int_t type) {
 	switch (type) {
-		case '.':
-			return 11;
 		case '*':
 		case '/':
 		case '%':
-			return 10;
+			return 12;
 		case '+':
 		case '-':
-			return 9;
+			return 11;
 		case '<' | GUM_TOKEN_FLAG_DOUBLE:
 		case '>' | GUM_TOKEN_FLAG_DOUBLE:
-			return 8;
+			return 10;
 		case '&':
-			return 7;
+			return 9;
 		case '^':
-			return 6;
+			return 8;
 		case '|':
-			return 5;
-		case '=' | GUM_TOKEN_FLAG_ASSIGN:
+			return 7;
+		case '=' | GUM_TOKEN_FLAG_DOUBLE:
 		case '!' | GUM_TOKEN_FLAG_ASSIGN:
 		case '<' | GUM_TOKEN_FLAG_ASSIGN:
 		case '>' | GUM_TOKEN_FLAG_ASSIGN:
 		case '<':
 		case '>':
-			return 4;
+			return 6;
 		case '&' | GUM_TOKEN_FLAG_DOUBLE:
-			return 3;
+			return 5;
 		case '|' | GUM_TOKEN_FLAG_DOUBLE:
-			return 2;
+			return 4;
 		case GUM_TOKEN_KW_as:
 		case GUM_TOKEN_KW_is:
-			return 1;
+			return 3;
+		case ',':
+			return 2;
 		default:
-			return -1;
+			if (type == '=' || type & GUM_TOKEN_FLAG_ASSIGN) {
+				return 1;
+			} else {
+				return -1;
+			}
 	}
 }
 
 static gum_node_t* ast_parse_binary(gum_lexer_t* lexer, gum_int_t prec) {
-	gum_node_t* left = ast_parse_value(lexer);
+	gum_node_t* node = ast_parse_value(lexer);
 	gum_int_t next_prec;
 	while ((next_prec = ast_precedence(gum_lexer_peek(lexer).type)) > prec) {
-		gum_node_t* node = ast_node_create(GUM_NODE_BINARY);
-		node->data.i = gum_lexer_next(lexer).type;
-		node->child.a = left;
-		node->child.b = ast_parse_binary(lexer, next_prec);
-		left = node;
+		gum_int_t type = gum_lexer_next(lexer).type;
+		gum_node_t* next_node = ast_node_create(GUM_NODE_BINARY);
+		next_node->data.i = type;
+		next_node->child.a = node;
+
+		if (next_prec == 1) {
+			next_node->type = GUM_NODE_ASSIGN;
+			next_node->child.b = ast_parse_expr(lexer);
+		} else {
+			next_node->child.b = ast_parse_binary(lexer, next_prec);
+		}
+		node = next_node;
 	}
-	return left;
+	return node;
 }
 
-static gum_node_t* ast_parse_expr(gum_lexer_t* lexer) {
+static inline gum_node_t* ast_parse_expr(gum_lexer_t* lexer) {
 	return ast_parse_binary(lexer, 0);
 }
 

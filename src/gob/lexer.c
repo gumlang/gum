@@ -94,7 +94,7 @@ static gum_int_t lexer_next_symbol(gum_lexer_t* lexer) {
 		input_next(lexer);
 		symbol |= GUM_TOKEN_FLAG_DOUBLE;
 	}
-	if (strchr("<>+-*/%~|&^", c.c) != NULL && input_peek(lexer).c == '=') {
+	if (strchr("<>+-*/%|&^!", c.c) != NULL && input_peek(lexer).c == '=') {
 		input_next(lexer);
 		symbol |= GUM_TOKEN_FLAG_ASSIGN;
 	}

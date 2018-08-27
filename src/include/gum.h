@@ -20,7 +20,7 @@
 #endif
 
 typedef int32_t gum_int_t;
-typedef float gum_float_t;
+typedef double gum_float_t;
 
 typedef struct gum_t gum_t;
 
