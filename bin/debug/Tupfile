@@ -1,0 +1,2 @@
+CC_FLAGS += -g -DGUM_DEBUG
+include_rules

@@ -1,0 +1,3 @@
+CC_FLAGS += -O3 -flto
+LD_FLAGS += -flto
+include_rules

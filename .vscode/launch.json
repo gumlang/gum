@@ -1,0 +1,20 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "gob",
+			"type": "cppdbg",
+			"request": "launch",
+			"miDebuggerPath": "gdb",
+			"program": "${workspaceRoot}/bin/debug/gob",
+			"cwd": "${workspaceRoot}/test",
+			"externalConsole": true,
+			"preLaunchTask": "tup",
+
+			"windows": {
+				"miDebuggerPath": "gdb.exe",
+				"program": "${workspaceRoot}/bin/debug/gob.exe",
+			}
+		}
+	]
+}

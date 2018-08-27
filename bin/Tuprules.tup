@@ -1,0 +1,22 @@
+.gitignore
+
+BIN_EXT =
+LIB_EXT = .so
+ifeq (@(TUP_PLATFORM),win32)
+	BIN_EXT = .exe
+	LIB_EXT = .dll
+endif
+
+SRC = $(TUP_CWD)/../src
+CC_FLAGS += -I$(SRC)/include
+
+!cc = |> ^ CC %f^ gcc -c %f -o %o $(CC_FLAGS) |>
+!ld = |> ^ LD %o^ gcc %f -o %o $(LD_FLAGS) |>
+
+# libgum
+: foreach $(SRC)/libgum/*.c $(SRC)/libgum/util/*.c |> !cc -DGUM_BUILD |> libgum/%B.o
+: libgum/*.o |> !ld -shared |> libgum$(LIB_EXT)
+
+# gob
+: foreach $(SRC)/gob/*.c |> !cc |> gob/%B.o
+: gob/*.o | libgum$(LIB_EXT) |> !ld -L. -lgum |> gob$(BIN_EXT)
