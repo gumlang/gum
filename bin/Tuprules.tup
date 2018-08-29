@@ -10,7 +10,7 @@ endif
 SRC = $(TUP_CWD)/../src
 CC_FLAGS += -I$(SRC)/include
 
-!cc = |> ^ CC %f^ gcc -c %f -o %o $(CC_FLAGS) |>
+!cc = |> ^ CC %b^ gcc -c %f -o %o $(CC_FLAGS) |>
 !ld = |> ^ LD %o^ gcc %f -o %o $(LD_FLAGS) |>
 
 # libgum
